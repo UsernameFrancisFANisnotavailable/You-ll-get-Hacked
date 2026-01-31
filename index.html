@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Video</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      overflow: hidden;
+    }
+    video {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+
+  <video id="vid" src="video.mp4" playsinline></video>
+
+  <script>
+    const vid = document.getElementById('vid');
+    let activated = false;
+    let vibrationSamsungDone = false;
+    let vibration28sStarted = false;
+
+    // Premier clic : lecture + son + plein écran
+    document.addEventListener('click', async () => {
+      if (activated) return;
+      activated = true;
+
+      try {
+        vid.muted = false;
+        await vid.play();
+
+        if (vid.requestFullscreen) {
+          await vid.requestFullscreen();
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    });
+
+    // Gestion des vibrations
+    vid.addEventListener('timeupdate', () => {
+
+      // Vibration style Samsung à 5 secondes (≈400 ms)
+      if (!vibrationSamsungDone && vid.currentTime >= 5) {
+        vibrationSamsungDone = true;
+        if (navigator.vibrate) navigator.vibrate(400);
+      }
+
+      // Vibration continue à partir de 28 secondes
+      if (!vibration28sStarted && vid.currentTime >= 28) {
+        vibration28sStarted = true;
+
+        if (navigator.vibrate) {
+          const remaining = (vid.duration - vid.currentTime) * 1000;
+          navigator.vibrate(remaining);
+        }
+      }
+    });
+
+    // Si l’utilisateur quitte le plein écran → on le remet
+    document.addEventListener('fullscreenchange', async () => {
+      if (!document.fullscreenElement && activated) {
+        try {
+          await vid.requestFullscreen();
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    });
+
+    // Empêche les clics après activation
+    document.addEventListener('click', (e) => {
+      if (activated) e.stopPropagation();
+    }, true);
+  </script>
+
+</body>
+</html>
